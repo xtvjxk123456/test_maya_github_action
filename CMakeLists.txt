@@ -18,14 +18,17 @@ cmake_minimum_required(VERSION 2.8)
 include($ENV{DEVKIT_LOCATION}/cmake/pluginEntry.cmake)
 
 # specify project name
-set(PROJECT_NAME lensDistortionCallback)
+set(PROJECT_NAME viewRenderOverridePostColor)
 
 
 
 # set SOURCE_FILES
 set(SOURCE_FILES
-   lensDistortionCallback.cpp
-   lensDistortionCallback.h
+   viewRenderOverridePostColorMain.cpp
+   viewRenderOverridePostColor.cpp
+   viewRenderOverridePostColorCmd.cpp
+   viewRenderOverridePostColor.h
+   viewRenderOverridePostColorCmd.h
 )
 
 # set linking libraries
@@ -34,10 +37,11 @@ set(LIBRARIES
      OpenMayaUI
      OpenMayaRender
      Foundation
-  
+
 )
 
-find_opengl()
+
+
 
 
 # Build plugin
