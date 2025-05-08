@@ -24,7 +24,8 @@ jobs:
     - name: mkdir
       shell: cmd
       run: |
-        mkdir ${{github.workspace}}/devkit
+        cd /d ${{github.workspace}}
+        mkdir devkit
       
     - name: Download & Extract
       uses: gamedev-thingy/Download-Extract@done
