@@ -22,6 +22,17 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    - name: Download & Extract
+      uses: gamedev-thingy/Download-Extract@done
+      with:
+        # The URL to download from
+        url: https://autodesk-adn-transfer.s3-us-west-2.amazonaws.com/ADN+Extranet/M%26E/Maya/devkit+2019/Autodesk_Maya_2019_2_Update_DEVKIT_Windows.zip
+        # Where the files will be extracted to
+        destination: ${{github.workspace}}/devkit
+        # Name of the downloaded ZIP file
+        ZIPname: Autodesk_Maya_2019_2_Update_DEVKIT_Windows
+          
+    
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
       # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
