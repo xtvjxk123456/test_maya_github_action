@@ -21,7 +21,10 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-
+    - name: mkdir
+      shell: cmd
+      run: mkdir ${{github.workspace}}/devkit
+      
     - name: Download & Extract
       uses: gamedev-thingy/Download-Extract@done
       with:
