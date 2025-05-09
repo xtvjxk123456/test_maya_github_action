@@ -192,13 +192,13 @@ PostQuadRender::shader()
 			return NULL;
 		}
 		// 设置其他参数
-		MFloatVector radialDistortionParams(1.0f,1.0f,1.0f);
+		MFloatVector radialDistortionParams(0.01f,0.01f,0.0f);
 		status = mShaderInstance->setParameter("radialDistortionParams", radialDistortionParams);
 		if (status != MStatus::kSuccess)
 		{
 			printf("Could not set radialDistortionParams parameter on edge detect shader\n");
 		}
-		MFloatVector tangentialDistortionParams(1.0f,1.0f);
+		MFloatVector tangentialDistortionParams(0.0f,0.0f);
 		status = mShaderInstance->setParameter("tangentialDistortionParams", tangentialDistortionParams);
 		if (status != MStatus::kSuccess)
 		{
