@@ -42,23 +42,30 @@ ColorPostProcessOverride::ColorPostProcessOverride( const MString & name )
     MHWRender::MRenderer *theRenderer = MHWRender::MRenderer::theRenderer();
     if (!theRenderer)
         return;
-
+	//--------------------------------
+	printf("initializeShaders\n");
+	const MHWRender::MShaderManager *shaderMgr = theRenderer->getShaderManager();
+	if (shaderMgr)
+	{
+		//初始化
+		struct stat info;
+		const MString shaderPath = MString("${EXTERNAL_SHADER_PATH}").expandEnvironmentVariablesAndTilde();
+		if (stat(shaderPath.asChar(), &info) != 0)
+		{
+			printf("Failed to get shader path : %s", shaderPath.asChar());
+		}
+		else
+		{
+			printf("%s : %s%s", "Find to shader path", shaderPath.asChar(), "\n");
+			shaderMgr->addShaderPath(shaderPath);
+			shaderMgr->addShaderIncludePath(shaderPath);
+		}
+		// 
+	}
+	//--------------------------------
     // Create a new set of operations as required
     MHWRender::MRenderer::theRenderer()->getStandardViewportOperations(mOperations);
-	//初始化
-	struct stat info;
-	const MString shaderPath = MString("${EXTERNAL_SHADER_PATH}").expandEnvironmentVariablesAndTilde();
-	if (stat(shaderPath.asChar(), &info) != 0)
-	{
-		printf("Failed to get shader path : %s", shaderPath.asChar());
-	}
-	else
-	{
-		printf("%s : %s%s", "Find to shader path", shaderPath.asChar(), "\n");
-		shaderMgr->addShaderPath(shaderPath);
-		shaderMgr->addShaderIncludePath(shaderPath);
-	}
-	// 
+	
     PostQuadRender* fishEyeOp = new PostQuadRender( kFishEyePassName, "RadialDistort", "" );
 	//
     mOperations.insertAfter(MHWRender::MRenderOperation::kStandardSceneName, fishEyeOp);
