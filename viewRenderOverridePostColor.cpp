@@ -46,6 +46,7 @@ ColorPostProcessOverride::ColorPostProcessOverride( const MString & name )
     // Create a new set of operations as required
     MHWRender::MRenderer::theRenderer()->getStandardViewportOperations(mOperations);
 	//初始化
+	struct stat info;
 	const MString shaderPath = MString("${EXTERNAL_SHADER_PATH}").expandEnvironmentVariablesAndTilde();
 	if (stat(shaderPath.asChar(), &info) != 0)
 	{
