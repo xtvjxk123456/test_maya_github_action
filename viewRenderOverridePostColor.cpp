@@ -45,15 +45,15 @@ ColorPostProcessOverride::ColorPostProcessOverride( const MString & name )
     // Create a new set of operations as required
     MHWRender::MRenderer::theRenderer()->getStandardViewportOperations(mOperations);
 
-    PostQuadRender* swirlOp = new PostQuadRender( kSwirlPassName, "FilterSwirl", "" );
+    // PostQuadRender* swirlOp = new PostQuadRender( kSwirlPassName, "FilterSwirl", "" );
     PostQuadRender* fishEyeOp = new PostQuadRender( kFishEyePassName, "FilterFishEye", "" );
-    PostQuadRender* edgeDetectOp = new PostQuadRender( kEdgeDetectPassName, "FilterEdgeDetect", "" );
+    // PostQuadRender* edgeDetectOp = new PostQuadRender( kEdgeDetectPassName, "FilterEdgeDetect", "" );
 
-    swirlOp->setEnabled(false); // swirl is disabled by default
+    // swirlOp->setEnabled(false); // swirl is disabled by default
 
-    mOperations.insertAfter(MHWRender::MRenderOperation::kStandardSceneName, swirlOp);
-    mOperations.insertAfter(kSwirlPassName, fishEyeOp);
-    mOperations.insertAfter(kFishEyePassName, edgeDetectOp);
+    mOperations.insertAfter(MHWRender::MRenderOperation::kStandardSceneName, fishEyeOp);
+    // mOperations.insertAfter(kSwirlPassName, fishEyeOp);
+    // mOperations.insertAfter(kFishEyePassName, edgeDetectOp);
 }
 
 
