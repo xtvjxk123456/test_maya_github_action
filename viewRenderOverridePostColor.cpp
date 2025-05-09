@@ -7,6 +7,7 @@
 //+
 #include "viewRenderOverridePostColor.h"
 #include <maya/MShaderManager.h>
+#include <sys/stat.h>
 
 const MString ColorPostProcessOverride::kSwirlPassName = "ColorPostProcessOverride_Swirl";
 const MString ColorPostProcessOverride::kFishEyePassName = "ColorPostProcessOverride_FishEye";
@@ -47,15 +48,15 @@ ColorPostProcessOverride::ColorPostProcessOverride( const MString & name )
 	//初始化
 	const MString shaderPath = MString("${EXTERNAL_SHADER_PATH}").expandEnvironmentVariablesAndTilde();
 	if (stat(shaderPath.asChar(), &info) != 0)
-		{
-			printf("Failed to get shader path : %s", shaderPath.asChar());
-		}
-		else
-		{
-			printf("%s : %s%s", "Find to shader path", shaderPath.asChar(), "\n");
-			shaderMgr->addShaderPath(shaderPath);
-			shaderMgr->addShaderIncludePath(shaderPath);
-		}
+	{
+		printf("Failed to get shader path : %s", shaderPath.asChar());
+	}
+	else
+	{
+		printf("%s : %s%s", "Find to shader path", shaderPath.asChar(), "\n");
+		shaderMgr->addShaderPath(shaderPath);
+		shaderMgr->addShaderIncludePath(shaderPath);
+	}
 	// 
     PostQuadRender* fishEyeOp = new PostQuadRender( kFishEyePassName, "RadialDistort", "" );
 	//
