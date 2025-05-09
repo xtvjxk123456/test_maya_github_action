@@ -44,13 +44,21 @@ ColorPostProcessOverride::ColorPostProcessOverride( const MString & name )
 
     // Create a new set of operations as required
     MHWRender::MRenderer::theRenderer()->getStandardViewportOperations(mOperations);
-
-    // PostQuadRender* swirlOp = new PostQuadRender( kSwirlPassName, "FilterSwirl", "" );
-    PostQuadRender* fishEyeOp = new PostQuadRender( kFishEyePassName, "FilterFishEye", "" );
-    // PostQuadRender* edgeDetectOp = new PostQuadRender( kEdgeDetectPassName, "FilterEdgeDetect", "" );
-
-    // swirlOp->setEnabled(false); // swirl is disabled by default
-
+	//初始化
+	const MString shaderPath = MString("${EXTERNAL_SHADER_PATH}").expandEnvironmentVariablesAndTilde();
+	if (stat(shaderPath.asChar(), &info) != 0)
+		{
+			printf("Failed to get shader path : %s", shaderPath.asChar());
+		}
+		else
+		{
+			printf("%s : %s%s", "Find to shader path", shaderPath.asChar(), "\n");
+			shaderMgr->addShaderPath(shaderPath);
+			shaderMgr->addShaderIncludePath(shaderPath);
+		}
+	// 
+    PostQuadRender* fishEyeOp = new PostQuadRender( kFishEyePassName, "RadialDistort", "" );
+	//
     mOperations.insertAfter(MHWRender::MRenderOperation::kStandardSceneName, fishEyeOp);
     // mOperations.insertAfter(kSwirlPassName, fishEyeOp);
     // mOperations.insertAfter(kFishEyePassName, edgeDetectOp);
@@ -174,19 +182,18 @@ PostQuadRender::shader()
 			printf("Could not set input render target / texture parameter on post 2d shader\n");
 			return NULL;
 		}
-		const MString edgeDetect("FilterEdgeDetect");
-		if (mEffectId == edgeDetect)
+		// 设置其他参数
+		MFloatVector radialDistortionParams(1.0f,1.0f,1.0f);
+		status = mShaderInstance->setParameter("radialDistortionParams", radialDistortionParams);
+		if (status != MStatus::kSuccess)
 		{
-			status = mShaderInstance->setParameter("gThickness", 0.5f );
-			if (status != MStatus::kSuccess)
-			{
-				printf("Could not set thickness parameter on edge detect shader\n");
-			}
-			status = mShaderInstance->setParameter("gThreshold", 0.1f );
-			if (status != MStatus::kSuccess)
-			{
-				printf("Could not set threshold parameter on edge detect shader\n");
-			}
+			printf("Could not set radialDistortionParams parameter on edge detect shader\n");
+		}
+		MFloatVector tangentialDistortionParams(1.0f,1.0f);
+		status = mShaderInstance->setParameter("tangentialDistortionParams", tangentialDistortionParams);
+		if (status != MStatus::kSuccess)
+		{
+			printf("Could not set tangentialDistortionParams parameter on edge detect shader\n");
 		}
 	}
 
