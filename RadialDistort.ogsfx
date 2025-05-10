@@ -1,0 +1,99 @@
+//World-view-projection transformation.
+uniform mat4 gWVPXf : WorldViewProjection;
+// Target size.
+uniform vec2 gTargetSize : ViewportPixelSize;
+// The single filter input， i.e. the image to be filtered.
+uniform texture2D gInputTex:InputTexture;
+// Filter input sampler.
+uniform sampler2D gInputSamp = sampler_state
+{
+    Texture =<gInputTex>;
+    //MinFilter=Point;
+    //MagFilter=Point;
+    //MipFilter=Point;
+}
+
+// Vertex shader input structure.
+attribute VS_INPUT
+{
+vec4 Pos : POSITION:
+vec2 UV : TEXCOORDO:
+}
+// Vertex shader output structure.
+
+attribute VS_TO_PS
+{
+vec2 VSUV :TEXCOORDO;
+}
+// Vertex shader.
+GLSLShader VS_FilterEdgeDetect
+{
+    void main()
+    {
+    gl_Position =glwVPXf*Pos;
+    // Pass the texture coordinates unchanged.A.
+    VSUV=UV;
+    }
+}
+//Pixel shader output structure.
+uniform vec3 radialDistortionParams;
+uniform vec2 tangentialDistortionParams;
+attribute pixelOut
+{
+vec4 FragColor: COLORO;
+}
+
+
+GLSLShader PS_FilterEdgeDetect
+{
+
+    vec2 RadialDistortion(vec2 coord, float k1, float k2, float k3) {
+        float r = length(coord);
+        float distortionFactor = 1.0 + k1 * pow(r, 2) + k2 * pow(r, 4) + k3 * pow(r, 6);
+        return distortionFactor * coord;
+    }
+
+    vec2 TangentialDistortion(vec2 coord, float p1, float p2) {
+        float x = coord.x;
+        float y = coord.y;
+        float r2 = x * x + y * y;
+        float dx = 2.0 * p1 * x * y + p2 * (r2 + 2.0 * x * x);
+        float dy = p1 * (r2 + 2.0 * y * y) + 2.0 * p2 * x * y;
+        return vec2(dx, dy);
+    }
+
+
+    void main() {
+        vec2 coords = VSUV * 2.0 - 1.0;
+        // Apply radial distortion
+        vec2 radialDistortionCoords = RadialDistortion(coords, radialDistortionParams.x, radialDistortionParams.y, radialDistortionParams.z);
+        // Apply tangential distortion
+        vec2 tangentialDistortionCoords = TangentialDistortion(coords, tangentialDistortionParams.x, tangentialDistortionParams.y);
+
+        // Combine the distortions
+        vec2 distortedCoord = radialDistortionCoords + tangentialDistortionCoords;
+
+        distortedCoord = (distortedCoord + 1.0) / 2.0;
+
+        // Sample the texture with the distorted coordinates
+        if (distortedCoord.x<0.0 || distortedCoord.x>1.0 ||distortedCoord.y<0.0 ||distortedCoord.y>1.0){
+            FragColor =  vec4(0,0,0,0);
+        }
+        else
+        {
+            FragColor = texture2D(gInputSamp, distortedCoord);
+        }
+        
+    }
+
+}
+
+// The main technique.
+technique Main
+{
+    pass p0
+    {
+        VertexShader (in VS_INPUT, out VS_TO_PS) = VS_FilterEdgeDetect;
+        PixelShader (in VS_TO_PS, out pixelOut) = PS_FilterEdgeDetect;
+    }
+}
