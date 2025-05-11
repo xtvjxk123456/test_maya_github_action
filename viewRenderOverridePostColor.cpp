@@ -8,6 +8,13 @@
 #include "viewRenderOverridePostColor.h"
 #include <maya/MShaderManager.h>
 #include <sys/stat.h>
+#include <maya/MGlobal.h>
+#include <maya/MDagPath.h>
+#include <maya/MDrawContext.h>
+#include <maya/MHWGeometry.h>
+#include <maya/MFnCamera.h>
+#include <maya/MString.h>
+
 
 const MString ColorPostProcessOverride::kSwirlPassName = "ColorPostProcessOverride_Swirl";
 const MString ColorPostProcessOverride::kFishEyePassName = "ColorPostProcessOverride_FishEye";
@@ -158,6 +165,43 @@ PostQuadRender::~PostQuadRender()
 	Return the appropriate shader instance based on the what
 	we want the quad operation to perform
 */
+// shader call back  --------------------------
+static  double getDoubleValueFromCameraAttr(  MDagPath& node, MString attrName )
+{
+    MStatus status;
+    MFnCamera nodeFn ( node );
+
+    MPlug plug = nodeFn.findPlug( attrName, status );
+    if (status == MS::kSuccess )
+    {
+        return plug.asDouble();
+    }
+    else
+    {
+        MGlobal::displayError( "Please add :" + attrName + " attribute to " + nodeFn.name() );
+    }
+    return 0.0;
+}
+
+
+
+static void  preCallback(MHWRender::MDrawContext& context, const MHWRender::MRenderItemList& renderItemList, MHWRender::MShaderInstance *shaderInstance){
+
+    MGlobal::displayError( "shader pre callback" );
+
+    MDagPath campath= context.getCurrentCameraPath();
+    double  k1 = getDoubleValueFromCameraAttr(campath, MString("k1"));
+    double  k2 = getDoubleValueFromCameraAttr(campath, MString("k2"));
+    double  k3 = getDoubleValueFromCameraAttr(campath, MString("k3"));
+
+    MFloatVector radialDistortionParams(k1,k2,k3);
+    MStatus status;
+    status = shaderInstance->setParameter("radialDistortionParams", radialDistortionParams);
+    if (status != MS::kSuccess){
+        MGlobal::displayError( "set parameter failed:radialDistortionParams" );
+    }
+}
+
 const MHWRender::MShaderInstance *
 PostQuadRender::shader()
 {
@@ -171,7 +215,8 @@ PostQuadRender::shader()
 			const MHWRender::MShaderManager* shaderMgr = renderer->getShaderManager();
 			if (shaderMgr)
 			{
-				mShaderInstance = shaderMgr->getEffectsFileShader( mEffectId.asChar(), mEffectIdTechnique.asChar() );
+				mShaderInstance = shaderMgr->getEffectsFileShader( mEffectId.asChar(), mEffectIdTechnique.asChar() ,0,0,
+                                                                   true,preCallback);
 			}
 		}
 	}
