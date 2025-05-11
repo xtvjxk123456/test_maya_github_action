@@ -166,7 +166,7 @@ PostQuadRender::~PostQuadRender()
 	we want the quad operation to perform
 */
 // shader call back  --------------------------
-static  double getDoubleValueFromCameraAttr(  MDagPath& node, MString attrName )
+static  double getDoubleValueFromCameraAttr(  MDagPath& node,  MString attrName )
 {
     MStatus status;
     MFnCamera nodeFn ( node );
@@ -183,24 +183,37 @@ static  double getDoubleValueFromCameraAttr(  MDagPath& node, MString attrName )
     return 0.0;
 }
 
+static void shaderOverridePreDrawCallback(
+        MHWRender::MDrawContext& context,
+        const MHWRender::MRenderItemList& renderItemList,
+        MHWRender::MShaderInstance *shaderInstance)
+{
 
-
-static void  preCallback(MHWRender::MDrawContext& context, const MHWRender::MRenderItemList& renderItemList, MHWRender::MShaderInstance *shaderInstance){
-
-    MGlobal::displayError( "shader pre callback" );
-
-    MDagPath campath= context.getCurrentCameraPath();
-    double  k1 = getDoubleValueFromCameraAttr(campath, MString("k1"));
-    double  k2 = getDoubleValueFromCameraAttr(campath, MString("k2"));
-    double  k3 = getDoubleValueFromCameraAttr(campath, MString("k3"));
-
-    MFloatVector radialDistortionParams(k1,k2,k3);
-    MStatus status;
-    status = shaderInstance->setParameter("radialDistortionParams", radialDistortionParams);
-    if (status != MS::kSuccess){
-        MGlobal::displayError( "set parameter failed:radialDistortionParams" );
-    }
+    printf("\tLIGHTS\n");
+    printf("\n");
 }
+
+
+
+//static void preCallback(
+//        MHWRender::MDrawContext& drawContext,
+//        const MHWRender::MRenderItemList& renderItemList,
+//        MHWRender::MShaderInstance *shaderInstance)
+//{
+//    printf( "shader pre callback\n" );
+//    MDagPath campath= drawContext.getCurrentCameraPath();
+//    double  k1 = getDoubleValueFromCameraAttr(campath, MString("k1"));
+//    double  k2 = getDoubleValueFromCameraAttr(campath, MString("k2"));
+//    double  k3 = getDoubleValueFromCameraAttr(campath, MString("k3"));
+//
+//    MFloatVector radialDistortionParams(k1,k2,k3);
+//    MStatus status;
+//    status = shaderInstance->setParameter("radialDistortionParams", radialDistortionParams);
+//    if (status != MS::kSuccess){
+//        MGlobal::displayError( "set parameter failed:radialDistortionParams\n" );
+//    }
+//}
+//
 
 const MHWRender::MShaderInstance *
 PostQuadRender::shader()
@@ -216,7 +229,7 @@ PostQuadRender::shader()
 			if (shaderMgr)
 			{
 				mShaderInstance = shaderMgr->getEffectsFileShader( mEffectId.asChar(), mEffectIdTechnique.asChar() ,0,0,
-                                                                   true,preCallback);
+                                                                   true,shaderOverridePreDrawCallback,NULL);
 			}
 		}
 	}
@@ -251,6 +264,12 @@ PostQuadRender::shader()
 		}
 	}
 
+    if (mShaderInstance){
+        printf("function %p %p\n",mShaderInstance->preDrawCallback(),mShaderInstance->postDrawCallback());
+    }
+    else{
+        printf("function no pointer\n");
+    }
 	return mShaderInstance;
 }
 
