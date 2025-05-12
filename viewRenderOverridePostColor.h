@@ -52,11 +52,13 @@ public:
 	{
 		return mUIName;
 	}
+    MStatus updateQuadRender();
 	
 protected:
 
 	// UI name 
 	MString mUIName;
+    const MHWRender::MFrameContext* frameContext;
 
 	friend class viewRenderOverridePostColorCmd;
 };
@@ -75,6 +77,8 @@ public:
 
     int writableTargets(unsigned int& count) override;
     bool getInputTargetDescription(const MString& name, MHWRender::MRenderTargetDescription& description) override;
+
+    MStatus setParm(const MString attr, MFloatVector value);
 
 protected:
 
