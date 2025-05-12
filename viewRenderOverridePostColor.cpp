@@ -15,6 +15,7 @@
 #include <maya/MFnCamera.h>
 #include <maya/MString.h>
 #include <maya/MFrameContext.h>
+#include <maya/MShaderManager.h>
 
 
 const MString ColorPostProcessOverride::kSwirlPassName = "ColorPostProcessOverride_Swirl";
@@ -100,11 +101,22 @@ MHWRender::DrawAPI ColorPostProcessOverride::supportedDrawAPIs() const
 //
 MStatus ColorPostProcessOverride::setup( const MString & destination )
 {
-    MStatus s =  updateQuadRender();
+    MStatus statu = MRenderOverride::setup(destination);
+    //updata
+    // Firewall checks
+    MHWRender::MRenderer* renderer = MHWRender::MRenderer::theRenderer();
+    if (!renderer) return MStatus::kFailure;
+    const MHWRender::MShaderManager* shaderMgr = renderer->getShaderManager();
+    if (!shaderMgr) return MStatus::kFailure;
+
+    MStatus s =  updateQuadRender(shaderMgr);
     if (s != MS ::kSuccess){
         MGlobal::displayWarning(MString("failed to update quad render shader parameter"));
     }
-    return MRenderOverride::setup(destination);
+    else{
+        printf("update override quad shader;\n");
+    }
+    return statu;
 }
 
 // This method is just here as an example.  Simply calls the base class method.
@@ -132,7 +144,7 @@ static  double getDoubleValueFromCameraAttr(  MDagPath& node,  MString attrName 
     return 0.0;
 }
 
-MStatus ColorPostProcessOverride::updateQuadRender() {
+MStatus ColorPostProcessOverride::updateQuadRender(const MHWRender::MShaderManager* shaderMgr) {
 // get frame context
     frameContext =  this->getFrameContext();
     MDagPath campath= frameContext->getCurrentCameraPath();
@@ -142,13 +154,26 @@ MStatus ColorPostProcessOverride::updateQuadRender() {
     double  k3 = getDoubleValueFromCameraAttr(campath, MString("k3"));
 
     MFloatVector radialDistortionParams(k1,k2,k3);
+    MStatus status;
+    //
+    const MString shaderName("RadialDistort");
+    const MString techniqueName("");
+    if (!quadShader)
+    {
+        quadShader = shaderMgr->getEffectsFileShader( shaderName, techniqueName );
+        if (!quadShader)
+        {
+            return MStatus::kFailure;
+        }
+        quadShader->setParameter("radialDistortionParams", radialDistortionParams);
+    }
+    //
     // find quad render instance
     auto index =  mOperations.indexOf(kFishEyePassName);
-    MStatus status;
     if (index != -1){
-        auto quad =  (PostQuadRender *)mOperations[index];
+        PostQuadRender * quad =  (PostQuadRender *)mOperations[index];
         // write to shader instance
-        status = quad->setParm("radialDistortionParams", radialDistortionParams);
+        quad->setShader(quadShader);
         if (status != MS::kSuccess){
             MGlobal::displayError( "set parameter failed:radialDistortionParams\n" );
         }
@@ -265,12 +290,6 @@ PostQuadRender::shader()
 		}
 	}
 
-    if (mShaderInstance){
-        printf("function %p %p\n",mShaderInstance->preDrawCallback(),mShaderInstance->postDrawCallback());
-    }
-    else{
-        printf("function no pointer\n");
-    }
 	return mShaderInstance;
 }
 
@@ -313,7 +332,7 @@ PostQuadRender::clearOperation()
 	return mClearOperation;
 }
 
-MStatus PostQuadRender::setParm(const MString attr, MFloatVector value){
-    mShaderInstance->setParameter(attr, value);
+MStatus PostQuadRender::setShader(MHWRender::MShaderInstance * shader) {
+    mShaderInstance =  shader;
     return MS ::kSuccess;
 }
