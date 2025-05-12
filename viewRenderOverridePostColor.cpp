@@ -315,4 +315,5 @@ PostQuadRender::clearOperation()
 
 MStatus PostQuadRender::setParm(const MString attr, MFloatVector value){
     mShaderInstance->setParameter(attr, value);
+    return MS ::kSuccess;
 }
