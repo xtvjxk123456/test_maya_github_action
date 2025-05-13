@@ -13,7 +13,7 @@ env:
   BUILD_TYPE: Release
 
 jobs:
-  build:
+  build_postColor:
     # The CMake configure and build commands are platform agnostic and should work equally well on Windows or Mac.
     # You can convert this to a matrix build if you need cross-platform coverage.
     # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
@@ -43,11 +43,11 @@ jobs:
       # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
       env:
         DEVKIT_LOCATION: ${{github.workspace}}/devkit/devkitBase
-      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+      run: cmake -B ${{github.workspace}}/postColor/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} .\postColor
 
     - name: Build
       # Build your program with the given configuration
-      run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+      run: cmake --build ${{github.workspace}}/postColor/build --config ${{env.BUILD_TYPE}}
 
     # - name: Test
     #   working-directory: ${{github.workspace}}/build
@@ -58,6 +58,6 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: my-artifact
-        path: ${{github.workspace}}/build/${{env.BUILD_TYPE}}
+        path: ${{github.workspace}}/postColor/build/${{env.BUILD_TYPE}}
         retention-days: 7
 
