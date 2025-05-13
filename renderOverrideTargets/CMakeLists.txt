@@ -46,5 +46,5 @@ build_plugin()
 
 install(TARGETS ${PROJECT_NAME}
         CONFIGURATIONS Release
-        DESTINATION ..
+        DESTINATION .
 )
