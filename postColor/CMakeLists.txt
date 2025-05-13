@@ -24,11 +24,11 @@ set(PROJECT_NAME viewRenderOverridePostColor)
 
 # set SOURCE_FILES
 set(SOURCE_FILES
-   viewRenderOverridePostColorMain.cpp
-   viewRenderOverridePostColor.cpp
-   viewRenderOverridePostColorCmd.cpp
-   viewRenderOverridePostColor.h
-   viewRenderOverridePostColorCmd.h
+        viewRenderOverridePostColorMain.cpp
+        viewRenderOverridePostColor.cpp
+        viewRenderOverridePostColorCmd.cpp
+        viewRenderOverridePostColor.h
+        viewRenderOverridePostColorCmd.h
 )
 
 # set linking libraries
@@ -47,6 +47,6 @@ build_plugin()
 
 install(TARGETS ${PROJECT_NAME}
         CONFIGURATIONS Release
-        DESTINATION .
+        DESTINATION ..
 )
 
