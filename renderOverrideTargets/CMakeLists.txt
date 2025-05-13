@@ -44,3 +44,7 @@ find_opengl()
 # Build plugin
 build_plugin()
 
+install(TARGETS ${PROJECT_NAME}
+        CONFIGURATIONS Release
+        DESTINATION ..
+)
