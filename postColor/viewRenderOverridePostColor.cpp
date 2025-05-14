@@ -47,6 +47,7 @@ const MString ColorPostProcessOverride::kEdgeDetectPassName = "ColorPostProcessO
 ColorPostProcessOverride::ColorPostProcessOverride( const MString & name )
 : MRenderOverride( name )
 , mUIName("Color Post")
+, quadShader(NULL)
 {
     MHWRender::MRenderer *theRenderer = MHWRender::MRenderer::theRenderer();
     if (!theRenderer)
@@ -101,7 +102,6 @@ MHWRender::DrawAPI ColorPostProcessOverride::supportedDrawAPIs() const
 //
 MStatus ColorPostProcessOverride::setup( const MString & destination )
 {
-    MStatus statu = MRenderOverride::setup(destination);
     //updata
     // Firewall checks
     MHWRender::MRenderer* renderer = MHWRender::MRenderer::theRenderer();
@@ -109,14 +109,14 @@ MStatus ColorPostProcessOverride::setup( const MString & destination )
     const MHWRender::MShaderManager* shaderMgr = renderer->getShaderManager();
     if (!shaderMgr) return MStatus::kFailure;
 
-    MStatus s =  updateQuadRender(shaderMgr);
+    MStatus s =  updateShader(shaderMgr);
     if (s != MS ::kSuccess){
         MGlobal::displayWarning(MString("failed to update quad render shader parameter"));
     }
     else{
         printf("update override quad shader;\n");
     }
-    return statu;
+    return s;
 }
 
 // This method is just here as an example.  Simply calls the base class method.
@@ -126,7 +126,39 @@ MStatus ColorPostProcessOverride::cleanup()
 	return MRenderOverride::cleanup();
 }
 
-// get camera attribute
+
+
+bool ColorPostProcessOverride::startOperationIterator()
+{
+    mCurrentOperation = 0;
+    return true;
+}
+
+MHWRender::MRenderOperation* ColorPostProcessOverride::renderOperation()
+{
+    int  kOperationCount =  mOperations.length();
+    if (mCurrentOperation >= 0 && mCurrentOperation < kOperationCount)
+    {
+        // Skip empty and disabled operations
+        //
+        return mOperations[mCurrentOperation];
+    }
+    return NULL;
+}
+
+bool ColorPostProcessOverride::nextRenderOperation()
+{
+    mCurrentOperation++;
+    int  kOperationCount =  mOperations.length();
+    if (mCurrentOperation < kOperationCount)
+    {
+        return true;
+    }
+    return false;
+}
+
+
+// ----------------------------------------------------------------------------------------
 static  double getDoubleValueFromCameraAttr(  MDagPath& node,  MString attrName )
 {
     MStatus status;
@@ -144,8 +176,8 @@ static  double getDoubleValueFromCameraAttr(  MDagPath& node,  MString attrName 
     return 0.0;
 }
 
-MStatus ColorPostProcessOverride::updateQuadRender(const MHWRender::MShaderManager* shaderMgr) {
-// get frame context
+MStatus ColorPostProcessOverride::updateShader(const MHWRender::MShaderManager *shaderMgr) {
+    // get frame context
     frameContext =  this->getFrameContext();
     MDagPath campath= frameContext->getCurrentCameraPath();
 
@@ -156,34 +188,44 @@ MStatus ColorPostProcessOverride::updateQuadRender(const MHWRender::MShaderManag
     MFloatVector radialDistortionParams(k1,k2,k3);
     MStatus status;
     //
-    const MString shaderName("RadialDistort");
-    const MString techniqueName("");
     if (!quadShader)
     {
+        //
+        const MString shaderName("RadialDistort");
+        const MString techniqueName("");
+        //init shader
         quadShader = shaderMgr->getEffectsFileShader( shaderName, techniqueName );
         if (!quadShader)
         {
+            MGlobal::displayWarning( "can not create shader in manager\n" );
             return MStatus::kFailure;
         }
+
+    }
+    if (quadShader){
+        // update parameter
         quadShader->setParameter("radialDistortionParams", radialDistortionParams);
+        MFloatVector tangentialDistortionParams(0.0f,0.0f);
+        quadShader->setParameter("tangentialDistortionParams", tangentialDistortionParams);
     }
     //
-    // find quad render instance
+    // find quad render and set shader
     auto index =  mOperations.indexOf(kFishEyePassName);
     if (index != -1){
         PostQuadRender * quad =  (PostQuadRender *)mOperations[index];
         // write to shader instance
         quad->setShader(quadShader);
-        if (status != MS::kSuccess){
-            MGlobal::displayError( "set parameter failed:radialDistortionParams\n" );
-        }
+        status =  MS ::kSuccess;
     }
     else{
         status =  MS ::kFailure;
     }
+    if (status != MS::kSuccess){
+        MGlobal::displayError( "set shader to quad render failded\n" );
+    }
     return status;
 }
-//-------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 // Custom quad operation (post color operation)
 //
 // Instances of this class are used to provide different
@@ -246,50 +288,8 @@ const MHWRender::MShaderInstance *
 PostQuadRender::shader()
 {
 	// Create a new shader instance for this quad render instance
-	//
-	if (mShaderInstance == NULL)
-	{
-		MHWRender::MRenderer* renderer = MHWRender::MRenderer::theRenderer();
-		if (renderer)
-		{
-			const MHWRender::MShaderManager* shaderMgr = renderer->getShaderManager();
-			if (shaderMgr)
-			{
-				mShaderInstance = shaderMgr->getEffectsFileShader( mEffectId.asChar(), mEffectIdTechnique.asChar() );
-			}
-		}
-	}
-
-	if (mShaderInstance)
-	{
-		// Set the input texture parameter 'gInputTex' to use
-		// a given color target
-		MHWRender::MRenderTargetAssignment assignment;
-		// Note that we have 2 targets with one being used as the output and
-		// here the other as the input.
-		assignment.target = getInputTarget(kColorTargetName);
-		
-		MStatus status = mShaderInstance->setParameter("gInputTex", assignment);
-		if (status != MStatus::kSuccess)
-		{
-			printf("Could not set input render target / texture parameter on post 2d shader\n");
-			return NULL;
-		}
-		// 设置其他参数
-		MFloatVector radialDistortionParams(0.01f,0.01f,0.0f);
-		status = mShaderInstance->setParameter("radialDistortionParams", radialDistortionParams);
-		if (status != MStatus::kSuccess)
-		{
-			printf("Could not set radialDistortionParams parameter on edge detect shader\n");
-		}
-		MFloatVector tangentialDistortionParams(0.0f,0.0f);
-		status = mShaderInstance->setParameter("tangentialDistortionParams", tangentialDistortionParams);
-		if (status != MStatus::kSuccess)
-		{
-			printf("Could not set tangentialDistortionParams parameter on edge detect shader\n");
-		}
-	}
-
+    MGlobal::displayInfo("query shader.");
+    pushInputTarget();
 	return mShaderInstance;
 }
 
@@ -335,4 +335,20 @@ PostQuadRender::clearOperation()
 MStatus PostQuadRender::setShader(MHWRender::MShaderInstance * shader) {
     mShaderInstance =  shader;
     return MS ::kSuccess;
+}
+MStatus PostQuadRender::pushInputTarget(){
+    MStatus status;
+    if (mShaderInstance){
+        MHWRender::MRenderTargetAssignment assignment;
+        // Note that we have 2 targets with one being used as the output and
+        // here the other as the input.
+        assignment.target = getInputTarget(kColorTargetName);
+
+        MStatus status = mShaderInstance->setParameter("gInputTex", assignment);
+        if (status != MStatus::kSuccess)
+        {
+            printf("Could not set input render target / texture parameter on post 2d shader\n");
+        }
+    }
+    return status;
 }

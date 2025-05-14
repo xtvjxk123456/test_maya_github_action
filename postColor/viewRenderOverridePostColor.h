@@ -47,12 +47,17 @@ public:
 	MStatus setup( const MString & destination ) override;
 	MStatus cleanup() override;
 
+    //
+    bool startOperationIterator() override;
+    MHWRender::MRenderOperation * renderOperation() override;
+    bool nextRenderOperation() override;
+
 	// UI name
 	MString uiName() const override
 	{
 		return mUIName;
 	}
-    MStatus updateQuadRender(const MHWRender::MShaderManager* shaderMgr);
+    MStatus updateShader(const MHWRender::MShaderManager* shaderMgr);
 	
 protected:
 
@@ -60,6 +65,8 @@ protected:
 	MString mUIName;
     const MHWRender::MFrameContext* frameContext;
     MHWRender::MShaderInstance * quadShader;
+
+    int mCurrentOperation;
 
 	friend class viewRenderOverridePostColorCmd;
 };
@@ -80,6 +87,7 @@ public:
     bool getInputTargetDescription(const MString& name, MHWRender::MRenderTargetDescription& description) override;
 
     MStatus setShader(MHWRender::MShaderInstance *);
+    MStatus pushInputTarget();
 
 protected:
 
